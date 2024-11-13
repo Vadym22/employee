@@ -1,0 +1,11 @@
+<mat-card class="employee-card" appearance="outlined">
+    <mat-card-header class="employee-card-header">
+      <mat-card-title>{{ selectedEmployee ? selectedEmployee.title : "" }}</mat-card-title>
+    </mat-card-header>
+    <img mat-card-image src="https://picsum.photos/400">
+    <mat-card-actions class="employee-card-actions">
+        @for (name of randomNames; track name) {
+            <button mat-button>{{name}}</button>
+        }
+    </mat-card-actions>
+  </mat-card>
