@@ -1,13 +1,16 @@
-import { Component, Input, OnInit } from '@angular/core';
-import {MatButtonModule} from '@angular/material/button';
-import {MatCardModule} from '@angular/material/card';
+import { Component, inject, Input, OnInit } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { EmployeesService, IEmployee } from '../employees.service';
+import { CommonModule } from '@angular/common';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { SelectDialogComponent } from '../select-dialog/select-dialog.component';
 
 
 @Component({
   selector: 'app-card',
   standalone: true,
-  imports: [MatCardModule, MatButtonModule,],
+  imports: [MatCardModule, MatButtonModule, CommonModule],
   templateUrl: './card.component.html',
   styleUrl: './card.component.scss'
 })
@@ -15,61 +18,63 @@ import { EmployeesService, IEmployee } from '../employees.service';
 export class CardComponent implements OnInit {
   public employeesData: IEmployee[] | undefined;
   public selectedEmployees: IEmployee[] | undefined;
-  public selectedEmployee: IEmployee | undefined;
-  public randomNames: any;
+  public currentEmployee: IEmployee | undefined;
+  public randomEmployees: any;
+  public isAnswerCorrect: boolean = false;
+  readonly dialog = inject(MatDialog);
+
   constructor(private employeesService: EmployeesService) { }
   ngOnInit() {
-    if(this.employeesService) {
+    if (this.employeesService) {
       this.employeesData = this.employeesService.getEmployees();
       this.selectedEmployees = [...this.employeesData];
       this.getRandomEmployee();
-      this.getRandomNames();
+      this.getRandomEmployees();
     };
   }
   getRandomEmployee() {
-    if(this.selectedEmployees) {
-    const randomIndex = Math.floor(Math.random() * this.selectedEmployees.length);
-    this.selectedEmployee = this.selectedEmployees[randomIndex];
-    this.selectedEmployees.splice(randomIndex, 1);
+    if (this.selectedEmployees) {
+      const randomIndex = Math.floor(Math.random() * this.selectedEmployees.length);
+      this.currentEmployee = this.selectedEmployees[randomIndex];
+      this.selectedEmployees.splice(randomIndex, 1);
     }
   }
 
-  // getRandomNames() {
-  //   if (this.employeesData && this.selectedEmployee) {
-  //     const filteredEmployee = this.employeesData.filter(e => e.gender === this.selectedEmployee?.gender);
-  //     const randomIndices: number[] = [];
-  
-  //     while (randomIndices.length < 3) {
-  //       const randomIndex = Math.floor(Math.random() * filteredEmployee.length);
-  //       if (!randomIndices.includes(randomIndex)) {
-  //         randomIndices.push(randomIndex);
-  //       }
-  //     }
-  //     this.randomNames = randomIndices.map(index => filteredEmployee[index].firstName);
-  //   }
-  // }
+  getRandomEmployees() {
+    if (this.employeesData && this.currentEmployee) {
+      const filteredEmployees = this.employeesData.filter(e => e.gender === this.currentEmployee?.gender && e.id !== this.currentEmployee.id); // Exclude selected employee
 
-getRandomNames() {
-  if (this.employeesData && this.selectedEmployee) {
-    const filteredEmployees = this.employeesData.filter(e => e.gender === this.selectedEmployee?.gender && e.id !== this.selectedEmployee.id); // Exclude selected employee
-
-    const randomIndices: number[] = [];
-    while (randomIndices.length < 3) {
-      const randomIndex = Math.floor(Math.random() * filteredEmployees.length);
-      if (!randomIndices.includes(randomIndex)) {
-        randomIndices.push(randomIndex);
+      const randomIndices: number[] = [];
+      while (randomIndices.length < 3) {
+        const randomIndex = Math.floor(Math.random() * filteredEmployees.length);
+        if (!randomIndices.includes(randomIndex)) {
+          randomIndices.push(randomIndex);
+        }
       }
+      const insertionIndex = Math.floor(Math.random() * 3);
+      randomIndices.splice(insertionIndex, 0, filteredEmployees.length);
+      this.randomEmployees = randomIndices.map(index => {
+        if (index === filteredEmployees.length) {
+          return this.currentEmployee;
+        } else {
+          return filteredEmployees[index];
+        }
+      });
     }
-    const insertionIndex = Math.floor(Math.random() * 3);
-    randomIndices.splice(insertionIndex, 0, filteredEmployees.length);
-    this.randomNames = randomIndices.map(index => {
-      if (index === filteredEmployees.length) {
-        return this.selectedEmployee?.firstName;
-      } else {
-        return filteredEmployees[index].firstName;
-      }
-    });
   }
-}
+
+  onEmployeeClick(employee: IEmployee) {
+    if (this.currentEmployee?.firstName === employee.firstName) {
+      this.isAnswerCorrect = true;
+      employee = { ...employee, buttonColor: "secondary" };
+    } else {
+      this.isAnswerCorrect = false;
+      employee = { ...employee, buttonColor: "warn" };
+    }
+  }
+
+  openDialog() {
+    this.dialog.open(SelectDialogComponent);
+  }
 }
 
